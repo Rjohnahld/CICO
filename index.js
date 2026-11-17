@@ -26,8 +26,9 @@ const dbConfig = {
 
 const dbConnection = mysql2.createPool(dbConfig);
 
-app.get("/", (req, res) => {
-    res.render("index")
+app.get("/", async (req, res) => {
+    const [rows] = await dbConnection.execute("SELECT * FROM food_entries");
+    res.render("index", { pageTitle: 'Food Entries', foodEntries: rows });
 });
 
 app.get("/food-entry/create", function(req,res){
@@ -41,6 +42,24 @@ app.post('/food-entry/create', async (req, res) => {
     VALUES (?, ?, ?, ?, ?)`;
     const values = [dateTime, foodName, calories, servingSize, unit];
     await dbConnection.execute(query, values);
+    res.redirect("/");
+})
+
+app.get("/food-entry/:id/edit", async (req, res) => {
+    const [rows] = await dbConnection.execute("SELECT * FROM food_entries WHERE  id = ?", [req.params.id]);
+    const foodEntry = rows[0];
+    res.render("edit-food-entry", { pageTitle: 'Edit Food Entry', foodEntry });
+})
+
+app.get("/food-entry/:id/delete", async (req, res) => {
+    const [rows] = await dbConnection.execute("SELECT * FROM food_entries WHERE id = ?",
+    [req.params.id]);
+    res.render("delete-food-entry", { pageTitle: 'Delete Food Entry', foodEntry: rows[0] });
+})
+
+app.post("/food-entry/:id/delete", async (req, res) => {
+    await dbConnection.execute("DELETE FROM food_entries WHERE id = ?", [req.params.id]);
+
     res.redirect("/");
 })
 
